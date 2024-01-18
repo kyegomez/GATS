@@ -8,7 +8,7 @@ from zeta.nn import (
     FeedForward,
 )
 from local_attention import LocalAttention
-
+from einops import rearrange
 
 class GATSBlock(nn.Module):
     def __init__(
@@ -75,13 +75,13 @@ class GATSBlock(nn.Module):
         action: Tensor = None, # 7D Tensor - 
         mask: Tensor = None,
     ):
+        img_b, img_c, h, w = img.shape
         img = img_to_text(img, self.seqlen, self.dim, True)
         audio = audio_to_text(audio, self.seqlen, self.dim, True)
         video = video_to_text(video, self.seqlen, self.dim, True)
         
         x = torch.cat((text, img, audio, video))
         x = self.local_attn(text, audio, video)
-        # print(x.shape)
         
         # Attention
         x, _ = self.attn(x)
@@ -90,5 +90,12 @@ class GATSBlock(nn.Module):
         # FFn with + residual
         x = self.ffn(x) + x
         
-        return x
+        # Scatter back to modalities
+        text = x
+        img = rearrange(x, "B (H W) D -> B D H W", h=h, w=w)
+        audio = rearrange(x, "B T D -> B D")
+        # video = rearrange(x, "B S D -> ")
+        
+        return text, img, audio #, video
+        # return x
 
