@@ -1,7 +1,6 @@
 import torch
 from torch import nn, Tensor
 from zeta.nn import (
-    # LocalAttention,
     img_to_text,
     video_to_text,
     audio_to_text,
@@ -10,8 +9,6 @@ from local_attention import LocalAttention
 
 
 
-
-# @classifier_free_guidance_class_decorator
 class GATSBlock(nn.Module):
     def __init__(
         self,
@@ -35,7 +32,7 @@ class GATSBlock(nn.Module):
         self.window_size = window_size
         self.seqlen = seqlen
 
-        dim_head * heads
+        inner_dim = dim_head * heads
 
         self.local_attn = LocalAttention(
             window_size,
@@ -51,11 +48,11 @@ class GATSBlock(nn.Module):
 
     def forward(
         self,
-        text: Tensor,
-        img: Tensor = None,
-        audio: Tensor = None,
-        video: Tensor = None,
-        action: Tensor = None,
+        text: Tensor, # 3d Tensor - (B, T, S)
+        img: Tensor = None, # 4d Tensor - (B, C, H, W)
+        audio: Tensor = None, # 3d Tensor - (B, T)
+        video: Tensor = None, # 5d Tensor - (B, T, C, H, W)
+        action: Tensor = None, # 7D Tensor - 
         mask: Tensor = None,
     ):
         img = img_to_text(img, self.seqlen, self.dim, True)
