@@ -11,6 +11,35 @@ from local_attention import LocalAttention
 from einops import rearrange
 
 class GATSBlock(nn.Module):
+    """
+    GATSBlock is a module that represents a single block of the GATS (Graph Attention Time Series) model.
+
+    Args:
+        dim (int): The input dimension of the block.
+        heads (int, optional): The number of attention heads. Defaults to 8.
+        dim_head (int, optional): The dimension of each attention head. Defaults to 64.
+        dropout (float, optional): The dropout rate. Defaults to 0.1.
+        window_size (int, optional): The window size for local attention. Defaults to 512.
+        causal (bool, optional): Whether to use causal attention. Defaults to True.
+        look_backward (int, optional): The number of tokens to look backward in local attention. Defaults to 1.
+        look_forward (int, optional): The number of tokens to look forward in local attention. Defaults to 0.
+        seqlen (int, optional): The maximum sequence length. Defaults to 1028.
+        ff_mult (int, optional): The multiplier for the feed-forward network dimension. Defaults to 4.
+
+    Attributes:
+        dim (int): The input dimension of the block.
+        heads (int): The number of attention heads.
+        dim_head (int): The dimension of each attention head.
+        dropout (nn.Dropout): The dropout layer.
+        window_size (int): The window size for local attention.
+        seqlen (int): The maximum sequence length.
+        ff_mult (int): The multiplier for the feed-forward network dimension.
+        local_attn (LocalAttention): The local attention module.
+        attn (Attention): The attention module.
+        ffn (FeedForward): The feed-forward network module.
+
+    """
+
     def __init__(
         self,
         dim: int,
@@ -75,6 +104,21 @@ class GATSBlock(nn.Module):
         action: Tensor = None, # 7D Tensor - 
         mask: Tensor = None,
     ):
+        """
+        Forward pass of the GATSBlock.
+
+        Args:
+            text (Tensor): The input text tensor of shape (B, T, S).
+            img (Tensor, optional): The input image tensor of shape (B, C, H, W). Defaults to None.
+            audio (Tensor, optional): The input audio tensor of shape (B, T). Defaults to None.
+            video (Tensor, optional): The input video tensor of shape (B, T, C, H, W). Defaults to None.
+            action (Tensor, optional): The input action tensor. Defaults to None.
+            mask (Tensor, optional): The mask tensor. Defaults to None.
+
+        Returns:
+            Tuple[Tensor, Tensor, Tensor]: The output text, image, and audio tensors.
+
+        """
         img_b, img_c, h, w = img.shape
         img = img_to_text(img, self.seqlen, self.dim, True)
         audio = audio_to_text(audio, self.seqlen, self.dim, True)
