@@ -65,23 +65,3 @@ class GATSBlock(nn.Module):
         print(x.shape)
         return x
 
-model = GATSBlock(
-    dim=512,
-    heads=8,
-    dim_head=64,
-    dropout=0.1,
-    window_size=512,
-    causal=True,
-    look_backward=1,
-    look_forward=0,
-    seqlen=512 * 2,
-)
-
-text = torch.randn(1, 1024, 512)
-img = torch.randn(1, 3, 224, 224)
-audio = torch.randn(1, 100)
-video = torch.randn(1, 3, 16, 224, 224)
-mask = torch.ones(1, 2057).bool()
-
-out = model(text, img, audio, video, mask=mask)
-print(out)
