@@ -4,9 +4,10 @@ from zeta.nn import (
     img_to_text,
     video_to_text,
     audio_to_text,
+    Attention,
+    FeedForward,
 )
 from local_attention import LocalAttention
-
 
 
 class GATSBlock(nn.Module):
@@ -21,6 +22,7 @@ class GATSBlock(nn.Module):
         look_backward: int = 1,
         look_forward: int = 0,
         seqlen: int = 1028,
+        ff_mult: int = 4,
         *args,
         **kwargs,
     ):
@@ -31,6 +33,7 @@ class GATSBlock(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.window_size = window_size
         self.seqlen = seqlen
+        self.ff_mult = ff_mult
 
         inner_dim = dim_head * heads
 
@@ -44,6 +47,23 @@ class GATSBlock(nn.Module):
             autopad=True,
             *args,
             **kwargs,
+        )
+        
+        self.attn = Attention(
+            dim,
+            dim_head,
+            heads,
+            causal,
+            flash=False,
+            dropout=dropout,
+            qk_norm=True,   
+        )
+        
+        self.ffn = FeedForward(
+            dim,
+            dim,
+            ff_mult,
+            post_act_ln=True
         )
 
     def forward(
@@ -61,7 +81,14 @@ class GATSBlock(nn.Module):
         
         x = torch.cat((text, img, audio, video))
         x = self.local_attn(text, audio, video)
+        # print(x.shape)
         
-        print(x.shape)
+        # Attention
+        x, _ = self.attn(x)
+        x = x + x
+        
+        # FFn with + residual
+        x = self.ffn(x) + x
+        
         return x
 

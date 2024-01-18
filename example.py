@@ -1,5 +1,5 @@
 import torch 
-from gats_torch import GATSBlock
+from gats_torch.main import GATSBlock
 
 # Create a GATSBlock model with the following configuration:
 # - Input dimension: 512
