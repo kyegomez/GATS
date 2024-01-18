@@ -3,3 +3,4 @@ zetascale
 swarms
 classifier-free-guidance-pytorch
 einops
+local-attention

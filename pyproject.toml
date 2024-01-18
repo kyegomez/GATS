@@ -27,6 +27,7 @@ swarms = "*"
 zetascale = "*"
 einops = "*"
 classifier-free-guidance-pytorch = "*"
+local-attention = "*"
 
 
 [tool.poetry.group.lint.dependencies]
