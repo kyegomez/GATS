@@ -2,3 +2,4 @@ torch
 zetascale
 swarms
 classifier-free-guidance-pytorch
+einops

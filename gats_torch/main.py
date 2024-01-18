@@ -1,7 +1,7 @@
 import torch
 from torch import nn, Tensor
 from einops import rearrange, reduce
-from zeta.nn import LocalAttention, Attend
+from zeta.nn import LocalAttention, Attention
 from classifier_free_guidance_pytorch import (
     classifier_free_guidance_class_decorator,
 )
@@ -42,6 +42,7 @@ class GATSBlock(nn.Module):
             *args,
             **kwargs,
         )
+    
 
     def forward(
         self,

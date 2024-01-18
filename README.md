@@ -5,7 +5,7 @@ Implementation of GATS from the paper: "GATS: Gather-Attend-Scatter" in pytorch 
 
 
 ## Install
-`pip install gats`
+`pip install gats-torch`
 
 ## Usage
 
