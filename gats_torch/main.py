@@ -8,7 +8,8 @@ from zeta.nn import (
     FeedForward,
 )
 from local_attention import LocalAttention
-from einops import rearrange
+from einops import reduce, repeat
+
 
 class GATSBlock(nn.Module):
     """
@@ -64,7 +65,7 @@ class GATSBlock(nn.Module):
         self.seqlen = seqlen
         self.ff_mult = ff_mult
 
-        inner_dim = dim_head * heads
+        dim_head * heads
 
         self.local_attn = LocalAttention(
             window_size,
@@ -77,7 +78,7 @@ class GATSBlock(nn.Module):
             *args,
             **kwargs,
         )
-        
+
         self.attn = Attention(
             dim,
             dim_head,
@@ -85,23 +86,18 @@ class GATSBlock(nn.Module):
             causal,
             flash=False,
             dropout=dropout,
-            qk_norm=True,   
+            qk_norm=True,
         )
-        
-        self.ffn = FeedForward(
-            dim,
-            dim,
-            ff_mult,
-            post_act_ln=True
-        )
+
+        self.ffn = FeedForward(dim, dim, ff_mult, post_act_ln=True)
 
     def forward(
         self,
-        text: Tensor, # 3d Tensor - (B, T, S)
-        img: Tensor = None, # 4d Tensor - (B, C, H, W)
-        audio: Tensor = None, # 3d Tensor - (B, T)
-        video: Tensor = None, # 5d Tensor - (B, T, C, H, W)
-        action: Tensor = None, # 7D Tensor - 
+        text: Tensor,  # 3d Tensor - (B, T, S)
+        img: Tensor = None,  # 4d Tensor - (B, C, H, W)
+        audio: Tensor = None,  # 3d Tensor - (B, T)
+        video: Tensor = None,  # 5d Tensor - (B, T, C, H, W)
+        action: Tensor = None,  # 7D Tensor -
         mask: Tensor = None,
     ):
         """
@@ -120,26 +116,26 @@ class GATSBlock(nn.Module):
 
         """
         img_b, img_c, h, w = img.shape
+        print(img.shape)
         img = img_to_text(img, self.seqlen, self.dim, True)
         audio = audio_to_text(audio, self.seqlen, self.dim, True)
         video = video_to_text(video, self.seqlen, self.dim, True)
-        
+
         x = torch.cat((text, img, audio, video))
         x = self.local_attn(text, audio, video)
-        
+
         # Attention
         x, _ = self.attn(x)
         x = x + x
-        
+
         # FFn with + residual
         x = self.ffn(x) + x
-        
+
         # Scatter back to modalities
         text = x
-        img = rearrange(x, "B (H W) D -> B D H W", h=h, w=w)
-        audio = rearrange(x, "B T D -> B D")
+        # img = repeat(x, "B (H W) C -> B C H W", H=h, W=w, C=img_c)
+        audio = reduce(x, "B T D -> B D", "mean")
         # video = rearrange(x, "B S D -> ")
-        
-        return text, img, audio #, video
-        # return x
 
+        return text, audio  # img, video
+        # return x
