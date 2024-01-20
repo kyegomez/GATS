@@ -31,7 +31,7 @@ video = torch.randn(1, 3, 16, 224, 224)  # Video input tensor
 mask = torch.ones(1, 2057).bool()  # Mask tensor for attention
 
 # Pass the input tensors through the GATSBlock model
-out, _, = model(text, img, audio, video, mask=mask)
+out, _, _, _ = model(text, img, audio, video, mask=mask)
 
 # Print the output
 print(out)

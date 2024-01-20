@@ -8,7 +8,7 @@ from zeta.nn import (
     FeedForward,
 )
 from local_attention import LocalAttention
-from einops import reduce, repeat
+from einops import reduce, repeat, rearrange
 
 
 class GATSBlock(nn.Module):
@@ -116,7 +116,9 @@ class GATSBlock(nn.Module):
 
         """
         img_b, img_c, h, w = img.shape
-        print(img.shape)
+        v_b, v_t, v_c, v_h, v_w = video.shape
+
+        # print(img.shape)
         img = img_to_text(img, self.seqlen, self.dim, True)
         audio = audio_to_text(audio, self.seqlen, self.dim, True)
         video = video_to_text(video, self.seqlen, self.dim, True)
@@ -133,9 +135,22 @@ class GATSBlock(nn.Module):
 
         # Scatter back to modalities
         text = x
-        # img = repeat(x, "B (H W) C -> B C H W", H=h, W=w, C=img_c)
-        audio = reduce(x, "B T D -> B D", "mean")
-        # video = rearrange(x, "B S D -> ")
 
-        return text, audio  # img, video
+        # Image scatter
+        # img = repeat(x, "B T C -> B C H W", C=img_c, H=h, W=w)
+        # add 2 more dimensions to the tensor
+        img_s = x.unsqueeze(0)
+        img = rearrange(
+            img_s, "B C H W -> B C H W", C=img_c, H=h, W=w
+        )
+
+        # Audio scatter
+        audio = reduce(x, "B T D -> B D", "mean")
+
+        # Video scatter
+        video = repeat(
+            x, "B T D -> B T C H W", C=img_c, H=h, W=w, T=v_t
+        )
+
+        return text, img, audio, video
         # return x
